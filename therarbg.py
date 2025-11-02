@@ -1,4 +1,4 @@
-# VERSION: 1.3
+# VERSION: 1.4
 # AUTHORS: BurningMop (burning.mop@yandex.com)
 
 # LICENSING INFORMATION
@@ -25,33 +25,33 @@ from html.parser import HTMLParser
 import time
 import threading
 from helpers import download_file, retrieve_url
-from novaprinter import prettyPrinter, anySizeToBytes
+from novaprinter import prettyPrinter
 
 
 class therarbg(object):
     url = 'https://therarbg.com'
     name = 'The RarBg'
     supported_categories = {
-        'all':'All', 
-        'movies':'Movies', 
-        'tv': 'TV', 
-        'music':'Music', 
-        'games':'Games', 
-        'anime':'Anime', 
-        'software':'Apps'
-        }
-    
+        'all': 'All',
+        'movies': 'Movies',
+        'tv': 'TV',
+        'music': 'Music',
+        'games': 'Games',
+        'anime': 'Anime',
+        'software': 'Apps'
+    }
+
     next_page_regex = r'<a.*?>»<\/a>'
     title_regex = r'<title>Search for.*<\/title>'
     has_next_page = True
 
     class MyHtmlParser(HTMLParser):
-    
+
         def error(self, message):
             pass
-    
+
         DIV, TABLE, TBODY, TR, TD, A, SPAN, I, B = ('div', 'table', 'tbody', 'tr', 'td', 'a', 'span', 'i', 'b')
-    
+
         def __init__(self, url):
             HTMLParser.__init__(self)
             self.magnet_regex = r'href=["\']magnet:.+?["\']'
@@ -72,12 +72,9 @@ class therarbg(object):
             self.shouldGetLeechs = False
 
             self.alreadyParseName = False
-            self.alreadyParsesLink = False
 
         def handle_starttag(self, tag, attrs):
             params = dict(attrs)
-            cssClasses = params.get('class', '')
-            elementId = params.get('id', '')
 
             if tag == self.TABLE:
                 self.foundTable = True
@@ -94,7 +91,7 @@ class therarbg(object):
                 self.insideCell = True
 
             if self.insideCell:
-                if self.column == 2 and tag == self.A and not self.alreadyParseName :
+                if self.column == 2 and tag == self.A and not self.alreadyParseName:
                     self.shouldParseName = True
                     href = params.get('href')
                     link = f'{self.url}/{href}'
@@ -106,7 +103,12 @@ class therarbg(object):
                     self.row['link'] = magnet_urls[0].split('"')[1]
 
                 if self.column == 3 and tag == self.A:
-                    self.shouldGetCategory = True                 
+                    self.shouldGetCategory = True
+
+                if self.column == 4 and tag == self.TD:
+                    timestamp = params.get('data-order')
+                    print(f"Timestamp: {timestamp}")
+                    self.row['pub_date'] = int(timestamp)
 
                 if self.column == 6:
                     self.shouldGetSize = True
@@ -115,7 +117,7 @@ class therarbg(object):
                     self.shouldGetSeeds = True
 
                 if self.column == 8:
-                    self.shouldGetLeechs = True                    
+                    self.shouldGetLeechs = True
 
         def handle_data(self, data):
             if self.shouldParseName:
@@ -131,12 +133,12 @@ class therarbg(object):
                 self.row['size'] = data.replace(',', '.').replace('\xa0', ' ')
                 self.shouldGetSize = False
 
-            if self.shouldGetSeeds:    
-                self.row['seeds']  = data
+            if self.shouldGetSeeds:
+                self.row['seeds'] = data
                 self.shouldGetSeeds = False
 
-            if self.shouldGetLeechs:    
-                self.row['leech']  = data
+            if self.shouldGetLeechs:
+                self.row['leech'] = data
                 self.shouldGetLeechs = False
 
         def handle_endtag(self, tag):
@@ -150,7 +152,6 @@ class therarbg(object):
                 self.row = {}
                 self.insideRow = False
                 self.alreadyParseName = False
-
 
     def download_torrent(self, info):
         print(download_file(info))
@@ -175,7 +176,7 @@ class therarbg(object):
             parser.feed(retrievedHtml)
             parser.close()
 
-    def search(self, what, cat = 'all'):
+    def search(self, what, cat='all'):
         page = 1
         search_category = self.supported_categories[cat]
 
@@ -185,7 +186,7 @@ class therarbg(object):
             t.start()
             time.sleep(0.5)
             threads.append(t)
-    
+
             page += 1
 
         for t in threads:
