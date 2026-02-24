@@ -1,4 +1,4 @@
-# VERSION: 1.2
+# VERSION: 1.3
 # AUTHORS: BurningMop (burning.mop@yandex.com), achernet (achernetz@gmail.com)
 
 # LICENSING INFORMATION
@@ -55,7 +55,7 @@ class torrentdownloads(object):
         def __init__(self, url):
             HTMLParser.__init__(self)
             self.magnet_regex = r'href=["\']magnet:.+?["\']'
-            self.pub_date_regex = r'<div\s+class=["\']grey_bar1["\']>\s*<p>\s*<span>\s*Torrent\s+added:\s*</span>\s*([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})\s*</p>\s*</div>'
+            self.pub_date_regex = r'<span>\s*Torrent\s+added:\s*</span>\s*([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})'
 
             self.url = url
             self.row = {}
@@ -113,7 +113,8 @@ class torrentdownloads(object):
                     torrent_page = retrieve_url(link)
                     matches = re.finditer(self.magnet_regex, torrent_page, re.MULTILINE)
                     magnet_urls = [x.group() for x in matches]
-                    self.row['link'] = magnet_urls[0].split('"')[1]
+                    if magnet_urls:
+                        self.row['link'] = magnet_urls[0].split('"')[1]
 
                     pub_date_match = re.search(self.pub_date_regex, torrent_page, re.MULTILINE | re.IGNORECASE)
                     if pub_date_match:
