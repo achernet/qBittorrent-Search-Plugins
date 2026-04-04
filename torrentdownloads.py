@@ -1,5 +1,5 @@
-# VERSION: 1.1
-# AUTHORS: BurningMop (burning.mop@yandex.com)
+# VERSION: 1.2
+# AUTHORS: BurningMop (burning.mop@yandex.com), achernet (achernetz@gmail.com)
 
 # LICENSING INFORMATION
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +24,7 @@ import re
 from html.parser import HTMLParser
 import time
 import threading
+from datetime import datetime, timezone
 from helpers import download_file, retrieve_url
 from novaprinter import prettyPrinter, anySizeToBytes
 
@@ -54,6 +55,7 @@ class torrentdownloads(object):
         def __init__(self, url):
             HTMLParser.__init__(self)
             self.magnet_regex = r'href=["\']magnet:.+?["\']'
+            self.pub_date_regex = r'<span>\s*Torrent\s+added:\s*</span>\s*([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})'
 
             self.url = url
             self.row = {}
@@ -111,7 +113,14 @@ class torrentdownloads(object):
                     torrent_page = retrieve_url(link)
                     matches = re.finditer(self.magnet_regex, torrent_page, re.MULTILINE)
                     magnet_urls = [x.group() for x in matches]
-                    self.row['link'] = magnet_urls[0].split('"')[1]
+                    if magnet_urls:
+                        self.row['link'] = magnet_urls[0].split('"')[1]
+
+                    pub_date_match = re.search(self.pub_date_regex, torrent_page, re.MULTILINE | re.IGNORECASE)
+                    if pub_date_match:
+                        pub_date_str = pub_date_match.group(1)
+                        pub_date_dt = datetime.strptime(pub_date_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+                        self.row['pub_date'] = int(pub_date_dt.timestamp())
                 else:
                     self.shouldSkipResult = True
                     
