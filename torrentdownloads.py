@@ -1,4 +1,4 @@
-# VERSION: 1.3
+# VERSION: 1.2
 # AUTHORS: BurningMop (burning.mop@yandex.com), achernet (achernetz@gmail.com)
 
 # LICENSING INFORMATION
